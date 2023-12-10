@@ -1,0 +1,21 @@
+#docker-compose up
+version: "24.0.7"
+services:
+  deploy:
+    container_name: TMSlocal
+    build:
+      context: main
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://TMSlocalPostgresSQLDB:5432/local_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=12345
+    networks:
+      tmsapp-network:
+        aliases:
+          - TMSapp
+networks:
+  tmsapp-network:
+    name: 'task_managment_sysytem_network'

@@ -1,0 +1,12 @@
+#docker-compose up
+version: "24.0.7"
+services:
+  postgres:
+    container_name: TMSlocal
+    image: postgres
+    environment:
+      POSTGRES_DB: "local_db"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "12345"
+    ports:
+      - "5432:5432"
