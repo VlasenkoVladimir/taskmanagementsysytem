@@ -1,5 +1,5 @@
 #docker-compose up
-version: "24.0.7"
+version: "3.9"
 services:
   deploy:
     container_name: TMSlocal
@@ -18,4 +18,4 @@ services:
           - TMSapp
 networks:
   tmsapp-network:
-    name: 'task_managment_sysytem_network'
+    name: 'tms-network'

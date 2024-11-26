@@ -1,6 +1,10 @@
 package effectiveMobile.com.taskManagementSystem.constants;
 
-public interface UserRolesConstants {
-    String ADMIN = "ADMIN";
-    String USER = "USER";
+/**
+ * Роли в системе
+ */
+public enum UserRolesConstants {
+    ADMIN,
+    USER,
+    GUEST
 }

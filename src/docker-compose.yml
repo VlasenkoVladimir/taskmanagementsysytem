@@ -1,5 +1,5 @@
 #docker-compose up
-version: "24.0.7"
+version: "3.9"
 services:
   postgres:
     container_name: TMSlocal

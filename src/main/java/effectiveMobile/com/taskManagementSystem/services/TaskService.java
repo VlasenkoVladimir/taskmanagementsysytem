@@ -2,126 +2,225 @@ package effectiveMobile.com.taskManagementSystem.services;
 
 import effectiveMobile.com.taskManagementSystem.domain.Task;
 import effectiveMobile.com.taskManagementSystem.domain.User;
+import effectiveMobile.com.taskManagementSystem.domain.enums.Priority;
 import effectiveMobile.com.taskManagementSystem.domain.enums.Status;
 import effectiveMobile.com.taskManagementSystem.dto.TaskDto;
-import effectiveMobile.com.taskManagementSystem.mappers.GenericMapper;
-import effectiveMobile.com.taskManagementSystem.repositories.GenericRepository;
+import effectiveMobile.com.taskManagementSystem.mappers.TaskMapper;
 import effectiveMobile.com.taskManagementSystem.repositories.TaskRepository;
 import effectiveMobile.com.taskManagementSystem.repositories.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static effectiveMobile.com.taskManagementSystem.constants.Errors.REST.ACCESS_ERROR_MESSAGE;
-
+/**
+ * Tsk service class
+ */
 @Slf4j
 @Service
-public class TaskService extends GenericService<Task, TaskDto> {
+public class TaskService {
 
-	private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
+    private final TaskMapper taskMapper;
+    private final UserRepository userRepository;
 
-	public TaskService(GenericRepository<Task> repository,
-					   GenericMapper<Task, TaskDto> mapper,
-					   UserRepository userRepository) {
-		super(repository, mapper);
-		this.userRepository = userRepository;
-	}
+    public TaskService(TaskRepository taskRepository, UserRepository userRepository) {
+        this.taskRepository = taskRepository;
+        this.taskMapper = TaskMapper.INSTANCE;
+        this.userRepository = userRepository;
+    }
 
-	public TaskDto create(final TaskDto newTask) {
-		newTask.setAuthor(userRepository.findUserByEmail(
-				SecurityContextHolder.getContext()
-						.getAuthentication()
-						.getName()).getId());
+    /**
+     * Creating new task
+     *
+     * @param newTaskDto DTO with new task data
+     * @return TaskDto if new task saved correctly
+     */
+    public TaskDto create(final TaskDto newTaskDto) {
+        log.info("Call create new task {}", newTaskDto.title());
 
-		return mapper.toDTO(repository.save(mapper.toEntity(newTask)));
-	}
+        //todo verify incoming data
 
-	public Page<TaskDto> listAllTasksPaginated(Pageable pageable) {
-		Page<Task> tasksPaginated = repository.findAll(pageable);
-		List<TaskDto> result = mapper.toDTOs(tasksPaginated.getContent());
+        return taskMapper.toDto(taskRepository.save(taskMapper.toTask(newTaskDto)));
+    }
 
-		return new PageImpl<>(result, pageable, tasksPaginated.getTotalElements());
-	}
+    public TaskDto getById(final long id) {
+        log.info("Call getById with id is {}", id);
 
-	public void setExecutor(Long taskId, Long executorId) {
-		final Task taskForSetExecutor = repository.findById(taskId).orElseThrow();
-		final User executor = userRepository.findById(executorId).orElseThrow();
-		final Long changerId = userRepository.findUserByEmail(SecurityContextHolder.getContext().getAuthentication()
-				.getName()).getId();
+        //todo verify incoming data
 
-		if (changerId.equals(taskForSetExecutor.getAuthor().getId())) {
-			taskForSetExecutor.setExecutor(executor);
-			repository.save(taskForSetExecutor);
-		} else {
-			throw new AccessDeniedException(ACCESS_ERROR_MESSAGE);
-		}
-	}
+        return taskMapper.toDto(taskRepository.getReferenceById(id));
+    }
 
-	public List<TaskDto> getTasksByAuthor(Long authorId) {
+    /**
+     * Get Page with list of tasks
+     *
+     * @param pageable Pageable
+     * @return Page with all TaskDto
+     */
+    public PageImpl<TaskDto> getAllPaginated(final Pageable pageable) {
+        log.info("Call listAllTasksPaginated with pageable {}", pageable);
 
-		return mapper.toDTOs(((TaskRepository)repository).getTasksByAuthorId(authorId));
-	}
+        Page<Task> tasksPaginated = taskRepository.findAll(pageable);
+        List<TaskDto> result = tasksPaginated.getContent().stream().map(taskMapper::toDto).toList();
 
-	public Page<TaskDto> getTasksByAuthorPaginated(Long authorId, Pageable pageable) {
-		List<Task> tasksList = ((TaskRepository)repository).getTasksByAuthorId(authorId, pageable).getContent();
+        return new PageImpl<>(result, pageable, tasksPaginated.getTotalElements());
+    }
 
-		return new PageImpl<>(mapper.toDTOs(tasksList));
-	}
 
-	public List<TaskDto> getTasksByExecutor (Long executorId) {
+    /**
+     * Get all tasks where author id is authorId
+     *
+     * @param authorId long author id
+     * @return List<TaskDto> of all tasks by this author
+     */
+    public List<TaskDto> getTasksByAuthorId(final Long authorId) {
+        log.info("Call getTasksByAuthor with authorId is {}", authorId);
 
-		return mapper.toDTOs(((TaskRepository)repository).getTasksByExecutorId(executorId));
-	}
-	public Page<TaskDto> getTasksByExecutor (Long executorId, Pageable pageable) {
-		List<Task> tasksList = ((TaskRepository)repository).getTasksByExecutorId(executorId, pageable).getContent();
+        //todo verify incoming data
 
-		return new PageImpl<>(mapper.toDTOs(tasksList));
-	}
+        return taskRepository.getTasksByAuthorId(authorId).stream().map(taskMapper::toDto).toList();
+    }
 
-	public void changeStatus(Status newStatus, Long taskId) {
-		final Task taskForChangeStatus = repository.findById(taskId).orElseThrow();
-		final Long taskExecutorId = taskForChangeStatus.getExecutor().getId();
-		final Long taskAuthorId = taskForChangeStatus.getAuthor().getId();
-		final Long changerId = userRepository.findUserByEmail(SecurityContextHolder.getContext().getAuthentication()
-				.getName()).getId();
+    /**
+     * Get all Tasks for author
+     *
+     * @param authorId long author id
+     * @param pageable Pageable
+     * @return Page with all Tasks where author id is authorId
+     */
+    public PageImpl<TaskDto> getTasksByAuthorIdPaginated(final Long authorId, final Pageable pageable) {
+        log.info("Call getTasksByAuthor with authorId is {} and pageable is {}", authorId, pageable);
 
-		if (taskExecutorId.equals(changerId) || taskAuthorId.equals(changerId)) {
-			taskForChangeStatus.setStatus(newStatus);
-			repository.save(taskForChangeStatus);
-		} else {
-			throw new AccessDeniedException(ACCESS_ERROR_MESSAGE);
-		}
-	}
+        //todo verify incoming data
 
-	@Override
-	public TaskDto update(TaskDto updatedTask) {
-		final Long changerId = userRepository.findUserByEmail(SecurityContextHolder.getContext().getAuthentication()
-				.getName()).getId();
-		final Long taskAuthorId = repository.findById(updatedTask.getId()).orElseThrow().getAuthor().getId();
+        Page<Task> taskPage = taskRepository.getTasksByAuthorId(authorId, pageable);
+        List<TaskDto> result = taskPage.getContent().stream().map(taskMapper::toDto).toList();
 
-		if (taskAuthorId.equals(changerId)) {
-			return super.update(updatedTask);
-		} else {
-			throw new AccessDeniedException(ACCESS_ERROR_MESSAGE);
-		}
-	}
+        return new PageImpl<>(result, pageable, taskPage.getTotalElements());
+    }
 
-	@Override
-	public void delete(Long id) {
-		final Long taskAuthorId = repository.findById(id).orElseThrow().getAuthor().getId();
-		final Long deleterId = userRepository.findUserByEmail(SecurityContextHolder.getContext().getAuthentication()
-						.getName()).getId();
+    /**
+     * Get all tasks by executor
+     *
+     * @param executorId long executor id
+     * @return List<TaskDto> of all tasks by this executor
+     */
+    public List<TaskDto> getTasksByExecutorId(final Long executorId) {
+        log.info("Call getTasksByExecutor with executorId is {}", executorId);
 
-		if (taskAuthorId.equals(deleterId)) {
-			super.delete(id);
-		} else {
-			throw new AccessDeniedException(ACCESS_ERROR_MESSAGE);
-		}
-	}
+        //todo verify incoming data
+
+        return taskRepository.getTasksByExecutorId(executorId).stream().map(taskMapper::toDto).toList();
+    }
+
+    /**
+     * Get all tasks of executor
+     *
+     * @param executorId long executor id
+     * @param pageable   Pageable
+     * @return Page with all Tasks where executor id is executorId
+     */
+    public Page<TaskDto> getTasksByExecutorIdPaginated(final Long executorId, final Pageable pageable) {
+        log.info("Call getTasksByExecutor with executorId is {} and pageable is {}", executorId, pageable);
+
+        //todo verify incoming data
+
+        Page<Task> taskPage = taskRepository.getTasksByExecutorId(executorId, pageable);
+        List<TaskDto> result = taskPage.getContent().stream().map(taskMapper::toDto).toList();
+
+        return new PageImpl<>(result, pageable, taskPage.getTotalElements());
+    }
+
+    /**
+     * Set Task executor
+     *
+     * @param taskId     long Task id
+     * @param executorId long executor id
+     * @return TaskDto if change correctly
+     */
+    public TaskDto setExecutor(final Long taskId, final Long executorId) {
+        log.info("Call setExecutor with task id is {} and executor id is {}", taskId, executorId);
+
+        // todo verify incoming data
+        // todo move check role to controller
+//        boolean isAdmin = SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+//                .anyMatch(x -> x.getAuthority().equals("ROLE_ADMIN"));
+
+        final Task taskForSetExecutor = taskRepository.findById(taskId).orElseThrow();
+        final User executor = userRepository.findById(executorId).orElseThrow();
+        taskForSetExecutor.setExecutor(executor);
+
+        return taskMapper.toDto(taskRepository.save(taskForSetExecutor));
+    }
+
+    /**
+     * Change task status
+     *
+     * @param newStatus new Task Status
+     * @param taskId    long Task id
+     * @return TaskDto if executed correctly
+     */
+    public TaskDto changeStatus(final Status newStatus, final Long taskId) {
+        log.info("Call changeStatus with Status is {} and task id is {}", newStatus, taskId);
+
+        //todo verify incoming data
+
+        final Task taskForChangeStatus = taskRepository.findById(taskId).orElseThrow();
+        taskForChangeStatus.setStatus(newStatus);
+
+        return taskMapper.toDto(taskRepository.save(taskForChangeStatus));
+    }
+
+    /**
+     * Change Priority for existed Task
+     *
+     * @param newPriority new Task Priority
+     * @param taskId      long Task id
+     * @return TaskDto if executed correctly
+     */
+    public TaskDto changePriority(final Priority newPriority, final Long taskId) {
+        log.info("Call changePriority with Priority is {} and task id is {}", newPriority, taskId);
+
+        //todo verify incoming data
+
+        final Task taskForChangePriority = taskRepository.findById(taskId).orElseThrow();
+        taskForChangePriority.setPriority(newPriority);
+
+
+        return taskMapper.toDto(taskRepository.save(taskForChangePriority));
+    }
+
+    /**
+     * Update existed task
+     *
+     * @param updatedTask Task for update
+     * @return TaskDto of updated Task
+     */
+    public TaskDto update(final TaskDto updatedTask) {
+        log.info("Call update with TaskDto is {}", updatedTask);
+
+        //todo verify incoming data
+
+        return taskMapper.toDto(taskRepository.save(taskMapper.toTask(updatedTask)));
+    }
+
+    /**
+     * Delete Task by id
+     *
+     * @param id long Task id
+     * @return true if correctly executed
+     */
+    public boolean delete(final Long id) {
+        log.info("Call delete with task id is {}", id);
+
+        //todo verify incoming data
+
+        taskRepository.deleteById(id);
+
+        return true;
+    }
 }

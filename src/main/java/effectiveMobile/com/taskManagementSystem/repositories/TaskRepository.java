@@ -19,6 +19,5 @@ public interface TaskRepository extends GenericRepository<Task> {
 	List<Task> getTasksByAuthorId(Long authorId);
 
 	Page<Task> getTasksByExecutorId(Long executorId, Pageable pageRequest);
-
 	List<Task> getTasksByExecutorId(Long executorId);
 }

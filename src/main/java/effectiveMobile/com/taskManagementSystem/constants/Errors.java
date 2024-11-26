@@ -2,6 +2,8 @@ package effectiveMobile.com.taskManagementSystem.constants;
 
 public interface Errors {
 
+    //Todo refactor to enum
+
     class REST {
         public static final String DELETE_ERROR_MESSAGE = "Удаление невозможно";
         public static final String AUTH_ERROR_MESSAGE = "Неавторизованный пользователь";

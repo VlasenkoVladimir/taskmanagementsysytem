@@ -51,7 +51,7 @@ public class TaskController extends GenericController<Task, TaskDto> {
 	@RequestMapping(value = "/listAllTasksPaginated", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public Page<TaskDto> listAllTasksPaginated(@RequestParam(value = "pageable") Pageable pageable) {
 
-		return ResponseEntity.status(OK).body((TaskService) service).getBody().listAllTasksPaginated(pageable);
+		return ResponseEntity.status(OK).body((TaskService) service).getBody().getAllPaginated(pageable);
 	}
 
 

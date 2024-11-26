@@ -10,15 +10,21 @@ public interface SecurityConstants {
             "/swagger-ui/**",
             "/v3/api-docs/**");
 
-    List<String> TASKS_WHITE_LIST = List.of("/tasks", "/tasks/{id}");
+    List<String> TASKS_WHITE_LIST = List.of(
+            "/tasks",
+            "/tasks/{id}");
 
-    List<String> COMMENTS_WHITE_LIST = List.of("/comments", "/comments/{id}");
+    List<String> COMMENTS_WHITE_LIST = List.of(
+            "/comments",
+            "/comments/{id}");
 
-    List<String> TASKS_PERMISSION_LIST = List.of("/tasks/add",
+    List<String> TASKS_PERMISSION_LIST = List.of(
+            "/tasks/add",
             "/tasks/update",
             "/tasks/delete");
 
-    List<String> COMMENTS_PERMISSION_LIST = List.of("/comments/add",
+    List<String> COMMENTS_PERMISSION_LIST = List.of(
+            "/comments/add",
             "/comments/update",
             "/comments/delete");
 
